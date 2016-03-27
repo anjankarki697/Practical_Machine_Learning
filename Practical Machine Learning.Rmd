@@ -1,0 +1,103 @@
+---
+title: "practical Machine learning"
+author: "Anjan Prakash Karki"
+date: "March 27, 2016"
+output: html_document
+---
+
+
+## Data Preparation
+
+Loading necessary libraries and data
+
+```{r}
+library(foreach)
+library(caret)
+library(doParallel)
+library(randomForest)
+ptrain <- read.csv("pml-training.csv")
+ptest <- read.csv("pml-testing.csv")
+```
+##Inspect the loaded data
+As training data set has 160 variables, many with missing values, we do some data preparation.
+```{r}
+str(ptrain)
+```
+##Removing variables with low variability
+Finding variables with near zero variance.
+```{r}
+low_var <- nearZeroVar(ptrain, saveMetrics=TRUE)
+
+non_low_vars <- subset(low_var, !low_var$nzv) 
+
+training1 <- ptrain[rownames(non_low_vars)]
+```
+This reduces the number of variables to 100.
+```{r}
+dim(training1)
+```
+##Eliminating variables with missing values
+The variables with data that is missing are eliminated. Now, there are 41 columns that are missing (19216 out of 19622 rows). There remains 59 variables.
+```{r}
+na_count <- summary(is.na(training1))
+
+na_count1 = sapply(training1, function(x) {sum(is.na(x))})
+
+cols_with_nas = names(na_count1[na_count1>18000])
+
+training2 = training1[, !names(training1) %in% cols_with_nas]
+
+dim(training2)
+```
+##Removing the first 6 variables
+The first 6 variables are removed as they are not useful. They contain descriptive information that would not be used in analysis. Now, 53 variables now remain out of an original 160 variables.
+```{r}
+training3 <- training2[-c(1:6)]
+dim(training3)
+```
+##Splitting training dataset into training and validation datasets
+The training dataset is splited into training and validation datasets, on a 60/40 basis to allow for the model to be validated against a clean dataset.
+```{r}
+set.seed(738024)
+inTrain <- createDataPartition(y=training3$classe, p=0.6, list=FALSE)
+training <- training3[inTrain,]
+validation <- training3[-inTrain,]
+```
+##Modeling
+
+#Develop Random Forest Model
+Based on previous experience, a Random Forest model is chosen as a first method. The randomForest package was used as it can be more efficient than the Random Forest method in the caret package. A 10-fold cross validation was used as train control method. Here is the result of the model and the importance of each predictor
+```{r}
+TC = trainControl(method = "cv", number = 10)
+
+RF <- randomForest(classe ~. , data=training, trControl = TC)
+print(RF)
+```
+```{r}
+importance(RF)
+```
+##Model Validation and Out of Sample Error
+
+The out-of-sample error is the error realised by using the model developed on the training data to make predictions on separate validation sample. An estimate is that should be close to the OOB estimate of error rate in the model. The cross validation shows the model to be very accurate, with an accuracy against the validation sample of 99.35%, with the out-of-sample error of 0.65% which is similar to the estimate.
+
+As this model shows such a good result, no further methods are examined.
+```{r}
+pred_RF <- predict(RF, validation, type = "class")
+confusionMatrix(pred_RF, validation$classe)
+```
+##Generating the Submission
+The instructions from the project assignment were followed, to generate the answers and then use a macro to generate the 20 problem_id files that were subsequently uploaded individually to the course website. The model proved to be quite accurate, correctly predicting all 20 test cases.
+```{r}
+answers <- predict(RF, newdata = ptest)
+
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(answers)
+```

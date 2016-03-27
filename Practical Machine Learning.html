@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>practical Machine learning</title>
+  <meta charset="utf-8">
+  <meta name="description" content="practical Machine learning">
+  <meta name="author" content="Anjan Prakash Karki">
+  <meta name="generator" content="slidify" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <link rel="stylesheet" href="http://slidifylibraries2.googlecode.com/git/inst/libraries/frameworks/io2012/css/default.css" media="all" >
+  <link rel="stylesheet" href="http://slidifylibraries2.googlecode.com/git/inst/libraries/frameworks/io2012/css/phone.css" 
+    media="only screen and (max-device-width: 480px)" >
+  <link rel="stylesheet" href="http://slidifylibraries2.googlecode.com/git/inst/libraries/frameworks/io2012/css/slidify.css" >
+  <link rel="stylesheet" href="http://slidifylibraries2.googlecode.com/git/inst/libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <base target="_blank"> <!-- This amazingness opens all links in a new tab. -->  
+  
+  <!-- Grab CDN jQuery, fall back to local if offline -->
+  <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.min.js"></script>
+  <script>window.jQuery || document.write('<script src="http://slidifylibraries2.googlecode.com/git/inst/libraries/widgets/quiz/js/jquery.js"><\/script>')</script> 
+  <script data-main="http://slidifylibraries2.googlecode.com/git/inst/libraries/frameworks/io2012/js/slides" 
+    src="http://slidifylibraries2.googlecode.com/git/inst/libraries/frameworks/io2012/js/require-1.0.8.min.js">
+  </script>
+  
+  
+
+</head>
+<body style="opacity: 0">
+  <slides class="layout-widescreen">
+    
+    <!-- LOGO SLIDE -->
+        <slide class="title-slide segue nobackground">
+  <hgroup class="auto-fadein">
+    <h1>practical Machine learning</h1>
+    <h2></h2>
+    <p>Anjan Prakash Karki<br/></p>
+  </hgroup>
+  <article></article>  
+</slide>
+    
+
+    <!-- SLIDES -->
+    <slide class="" id="slide-1" style="background:;">
+  <hgroup>
+    <h2>Data Preparation</h2>
+  </hgroup>
+  <article data-timings="">
+    <p>Loading necessary libraries and data</p>
+
+<pre><code class="r">library(foreach)
+library(caret)
+</code></pre>
+
+<pre><code>## Loading required package: lattice
+</code></pre>
+
+<pre><code>## Loading required package: ggplot2
+</code></pre>
+
+<pre><code class="r">library(doParallel)
+</code></pre>
+
+<pre><code>## Loading required package: iterators
+</code></pre>
+
+<pre><code>## Loading required package: parallel
+</code></pre>
+
+<pre><code class="r">library(randomForest)
+</code></pre>
+
+<pre><code>## randomForest 4.6-12
+</code></pre>
+
+<pre><code>## Type rfNews() to see new features/changes/bug fixes.
+</code></pre>
+
+<pre><code>## 
+## Attaching package: &#39;randomForest&#39;
+</code></pre>
+
+<pre><code>## The following object is masked from &#39;package:ggplot2&#39;:
+## 
+##     margin
+</code></pre>
+
+<pre><code class="r">ptrain &lt;- read.csv(&quot;pml-training.csv&quot;)
+</code></pre>
+
+<pre><code>## Warning in file(file, &quot;rt&quot;): cannot open file &#39;pml-training.csv&#39;: No such
+## file or directory
+</code></pre>
+
+<pre><code>## Error in file(file, &quot;rt&quot;): cannot open the connection
+</code></pre>
+
+<pre><code class="r">ptest &lt;- read.csv(&quot;pml-testing.csv&quot;)
+</code></pre>
+
+<pre><code>## Warning in file(file, &quot;rt&quot;): cannot open file &#39;pml-testing.csv&#39;: No such
+## file or directory
+</code></pre>
+
+<pre><code>## Error in file(file, &quot;rt&quot;): cannot open the connection
+</code></pre>
+
+<p>##Inspect the loaded data
+As training data set has 160 variables, many with missing values, we do some data preparation.</p>
+
+<pre><code class="r">str(ptrain)
+</code></pre>
+
+<pre><code>## Error in str(ptrain): object &#39;ptrain&#39; not found
+</code></pre>
+
+<p>##Removing variables with low variability
+Finding variables with near zero variance.</p>
+
+<pre><code class="r">low_var &lt;- nearZeroVar(ptrain, saveMetrics=TRUE)
+</code></pre>
+
+<pre><code>## Error in is.vector(x): object &#39;ptrain&#39; not found
+</code></pre>
+
+<pre><code class="r">non_low_vars &lt;- subset(low_var, !low_var$nzv) 
+</code></pre>
+
+<pre><code>## Error in subset(low_var, !low_var$nzv): object &#39;low_var&#39; not found
+</code></pre>
+
+<pre><code class="r">training1 &lt;- ptrain[rownames(non_low_vars)]
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;ptrain&#39; not found
+</code></pre>
+
+<p>This reduces the number of variables to 100.</p>
+
+<pre><code class="r">dim(training1)
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;training1&#39; not found
+</code></pre>
+
+<p>##Eliminating variables with missing values
+The variables with data that is missing are eliminated. Now, there are 41 columns that are missing (19216 out of 19622 rows). There remains 59 variables.</p>
+
+<pre><code class="r">na_count &lt;- summary(is.na(training1))
+</code></pre>
+
+<pre><code>## Error in summary(is.na(training1)): object &#39;training1&#39; not found
+</code></pre>
+
+<pre><code class="r">na_count1 = sapply(training1, function(x) {sum(is.na(x))})
+</code></pre>
+
+<pre><code>## Error in lapply(X = X, FUN = FUN, ...): object &#39;training1&#39; not found
+</code></pre>
+
+<pre><code class="r">cols_with_nas = names(na_count1[na_count1&gt;18000])
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;na_count1&#39; not found
+</code></pre>
+
+<pre><code class="r">training2 = training1[, !names(training1) %in% cols_with_nas]
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;training1&#39; not found
+</code></pre>
+
+<pre><code class="r">dim(training2)
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;training2&#39; not found
+</code></pre>
+
+<p>##Removing the first 6 variables
+The first 6 variables are removed as they are not useful. They contain descriptive information that would not be used in analysis. Now, 53 variables now remain out of an original 160 variables.</p>
+
+<pre><code class="r">training3 &lt;- training2[-c(1:6)]
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;training2&#39; not found
+</code></pre>
+
+<pre><code class="r">dim(training3)
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;training3&#39; not found
+</code></pre>
+
+<p>##Splitting training dataset into training and validation datasets
+The training dataset is splited into training and validation datasets, on a 60/40 basis to allow for the model to be validated against a clean dataset.</p>
+
+<pre><code class="r">set.seed(738024)
+inTrain &lt;- createDataPartition(y=training3$classe, p=0.6, list=FALSE)
+</code></pre>
+
+<pre><code>## Error in createDataPartition(y = training3$classe, p = 0.6, list = FALSE): object &#39;training3&#39; not found
+</code></pre>
+
+<pre><code class="r">training &lt;- training3[inTrain,]
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;training3&#39; not found
+</code></pre>
+
+<pre><code class="r">validation &lt;- training3[-inTrain,]
+</code></pre>
+
+<pre><code>## Error in eval(expr, envir, enclos): object &#39;training3&#39; not found
+</code></pre>
+
+<p>##Modeling</p>
+
+<p>#Develop Random Forest Model
+Based on previous experience, a Random Forest model is chosen as a first method. The randomForest package was used as it can be more efficient than the Random Forest method in the caret package. A 10-fold cross validation was used as train control method. Here is the result of the model and the importance of each predictor</p>
+
+<pre><code class="r">TC = trainControl(method = &quot;cv&quot;, number = 10)
+
+RF &lt;- randomForest(classe ~. , data=training, trControl = TC)
+</code></pre>
+
+<pre><code>## Error in randomForest.default(m, y, ...): Can not handle categorical predictors with more than 53 categories.
+</code></pre>
+
+<pre><code class="r">print(RF)
+</code></pre>
+
+<pre><code>## Error in print(RF): object &#39;RF&#39; not found
+</code></pre>
+
+<pre><code class="r">importance(RF)
+</code></pre>
+
+<pre><code>## Error in importance(RF): object &#39;RF&#39; not found
+</code></pre>
+
+<p>##Model Validation and Out of Sample Error</p>
+
+<p>The out-of-sample error is the error realised by using the model developed on the training data to make predictions on separate validation sample. An estimate is that should be close to the OOB estimate of error rate in the model. The cross validation shows the model to be very accurate, with an accuracy against the validation sample of 99.35%, with the out-of-sample error of 0.65% which is similar to the estimate.</p>
+
+<p>As this model shows such a good result, no further methods are examined.</p>
+
+<pre><code class="r">pred_RF &lt;- predict(RF, validation, type = &quot;class&quot;)
+</code></pre>
+
+<pre><code>## Error in predict(RF, validation, type = &quot;class&quot;): object &#39;RF&#39; not found
+</code></pre>
+
+<pre><code class="r">confusionMatrix(pred_RF, validation$classe)
+</code></pre>
+
+<pre><code>## Error in confusionMatrix(pred_RF, validation$classe): object &#39;pred_RF&#39; not found
+</code></pre>
+
+<p>##Generating the Submission
+The instructions from the project assignment were followed, to generate the answers and then use a macro to generate the 20 problem_id files that were subsequently uploaded individually to the course website. The model proved to be quite accurate, correctly predicting all 20 test cases.</p>
+
+<pre><code class="r">answers &lt;- predict(RF, newdata = ptest)
+</code></pre>
+
+<pre><code>## Error in predict(RF, newdata = ptest): object &#39;RF&#39; not found
+</code></pre>
+
+<pre><code class="r">pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0(&quot;problem_id_&quot;,i,&quot;.txt&quot;)
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(answers)
+</code></pre>
+
+<pre><code>## Error in pml_write_files(answers): object &#39;answers&#39; not found
+</code></pre>
+
+  </article>
+  <!-- Presenter Notes -->
+</slide>
+
+    <slide class="backdrop"></slide>
+  </slides>
+  <div class="pagination pagination-small" id='io2012-ptoc' style="display:none;">
+    <ul>
+      <li>
+      <a href="#" target="_self" rel='tooltip' 
+        data-slide=1 title='Data Preparation'>
+         1
+      </a>
+    </li>
+  </ul>
+  </div>  <!--[if IE]>
+    <script 
+      src="http://ajax.googleapis.com/ajax/libs/chrome-frame/1/CFInstall.min.js">  
+    </script>
+    <script>CFInstall.check({mode: 'overlay'});</script>
+  <![endif]-->
+</body>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="http://slidifylibraries2.googlecode.com/git/inst/libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
